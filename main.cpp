@@ -7,36 +7,39 @@
 
 class Actor{
     public:
-        float x;
-        float y;
+        olc::vf2d pos;
+		olc::vf2d size;
+		olc::vf2d vel;
 
-    Actor(float _x, float _y){
-        x = _x;
-        y = _y;
+    Actor(olc::vf2d _pos){
+        pos = _pos;
+        size = {4, 4};
     }
     virtual void update(){}
     virtual void draw(olc::PixelGameEngine* pge, std::map<std::string,size_t>&texMap) {
         auto& assets = AssetManager::Current();
-        pge->DrawSprite(x, y, assets.GetTexture(texMap["cointexture"])->sprite);
+        pge->DrawSprite(pos, assets.GetTexture(texMap["cointexture"])->sprite);
     }
 };
 
 class Pingu : public Actor{
     public:
-        Pingu(float _x, float _y) : Actor(_x, _y){}
+        Pingu(olc::vf2d _pos) : Actor(_pos){
+            size = {3, 4};
+        }
     virtual void update(){}
     virtual void draw(olc::PixelGameEngine* pge, std::map<std::string,size_t>&texMap) {
         auto& assets = AssetManager::Current();
-        pge->DrawSprite(x, y, assets.GetTexture(texMap["pingutexture"])->sprite);
+        pge->DrawSprite(pos, assets.GetTexture(texMap["pingutexture"])->sprite);
     }
 };
 
 class Coin : public Actor{
-    Coin(float _x, float _y) : Actor(_x, _y){}
+    Coin(olc::vf2d _pos) : Actor(_pos){}
     void update(){}
     void draw(olc::PixelGameEngine* pge, std::map<std::string,size_t>&texMap) {
         auto& assets = AssetManager::Current();
-        pge->DrawSprite(x, y, assets.GetTexture(texMap["cointexture"])->sprite);
+        pge->DrawSprite(pos, assets.GetTexture(texMap["cointexture"])->sprite);
     }
 };
 
@@ -117,8 +120,8 @@ class Pingus : public olc::PixelGameEngine
 
             //Actor actor(2, 2);
             //Pingu pingu(30, 30);
-            Pingu* ppingu = new Pingu(30, 30);
-            Actor* actor = new Actor(30, 30);
+            Pingu* ppingu = new Pingu({30, 30});
+            Actor* actor = new Actor({0, 0});
             //levelActors.push_back(actor);
             levelActors.push_back(ppingu);
             levelActors.push_back(actor);
@@ -166,7 +169,7 @@ int main()
 {
     Pingus demo;
     demo.SetPixelMode(olc::Pixel::MASK);
-    if(demo.Construct(200, 200, 4, 4))
+    if(demo.Construct(100, 100, 8, 8))
     {
         demo.Start();
     }
