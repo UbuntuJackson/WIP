@@ -132,9 +132,11 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="actor.h" />
     <ClInclude Include="asset_manager.h" />
     <ClInclude Include="entity.h" />
     <ClInclude Include="olcPixelGameEngine.h" />
+    <ClInclude Include="pingu.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
