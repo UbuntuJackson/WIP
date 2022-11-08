@@ -128,10 +128,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="asset_manager.cpp" />
+    <ClCompile Include="entity.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="asset_manager.h" />
+    <ClInclude Include="entity.h" />
     <ClInclude Include="olcPixelGameEngine.h" />
   </ItemGroup>
   <ItemGroup>

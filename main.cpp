@@ -1,6 +1,7 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 #include "asset_manager.h"
+#include "entity.h"
 #include <vector>
 #include <iostream>
 #include <string>
@@ -60,7 +61,10 @@ class Pingus : public olc::PixelGameEngine
             BOMB,
             BASH
         };
-        std::vector<Actor*> levelActors;
+        
+        //Pingu* ppingu;
+
+        std::vector<Auto_ptr1<Actor>> levelActors;
         std::vector<int> levelActions;
         olc::Sprite	*spriteMap;
         olc::Sprite	*spriteCollisionMap;
@@ -120,11 +124,12 @@ class Pingus : public olc::PixelGameEngine
 
             //Actor actor(2, 2);
             //Pingu pingu(30, 30);
-            Pingu* ppingu = new Pingu({90, 90});
-            Actor* actor = new Actor({0, 0});
+            //Pingu* ppingu = new Pingu({90, 90});
+            Auto_ptr1<Actor> ppingu(new Pingu({ 90, 90 }));
+            //Actor* actor = new Actor({0, 0});
             //levelActors.push_back(actor);
             levelActors.push_back(ppingu);
-            levelActors.push_back(actor);
+            //levelActors.push_back(actor);
             //spriteMap -> SetPixel(olc::vi2d(7, 16), olc::Pixel(0, 0, 0, 255));
             RemoveCircle(4, 4, assets.GetTexture(textureMap["spritemap"])->sprite, assets.GetTexture(textureMap["collisionmap"])->sprite, assets.GetTexture(textureMap["bombpng"])->sprite);
             return true;
@@ -156,8 +161,7 @@ class Pingus : public olc::PixelGameEngine
                 }*/
             }
             //std::cout << CompareColour(spriteMap -> GetPixel(7, 16), olc::Pixel(0, 0, 0, 0));
-            for (auto act : levelActors){
-                //DrawSprite(act.x, act.y, act.sprite);
+            for (Auto_ptr1<Actor>& act : levelActors){
                 act -> draw(this, textureMap);
             }
             DrawSprite(0, 0, assets.GetTexture(textureMap["spritemap"])->sprite);
