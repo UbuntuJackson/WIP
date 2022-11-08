@@ -35,10 +35,6 @@
 *.ilk
 .vs
 
-*.sln
-*.vcxproj
-*.vcxproj.filter
-*.vcxproj.user
 x64Debug
 .vscode
 .vs
