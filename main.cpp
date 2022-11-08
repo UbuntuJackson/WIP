@@ -2,8 +2,8 @@
 #include "olcPixelGameEngine.h"
 #include "asset_manager.h"
 #include "entity.h"
-//#include "actor.h"
-//#include "pingu.h"
+#include "actor.h"
+#include "pingu.h"
 #include <vector>
 #include <iostream>
 #include <string>
@@ -33,12 +33,8 @@ class Actor{
         size = {4.0, 4.0};
         vel = { 0.0, 0.0 };
     }
-    virtual void update(Pingus* game, float _fElapsedTime){
-    }
-    virtual void draw(olc::PixelGameEngine* pge, std::map<std::string,size_t>&texMap) {
-        auto& assets = AssetManager::Current();
-        pge->DrawSprite(pos, assets.GetTexture(texMap["cointexture"])->sprite);
-    }
+    virtual void update(Pingus* game, float _fElapsedTime);
+    virtual void draw(olc::PixelGameEngine* pge, std::map<std::string, size_t>& texMap);
 };
 
 class Pingu : public Actor{
@@ -47,37 +43,14 @@ class Pingu : public Actor{
         Pingu(olc::vf2d _pos) : Actor(_pos){
             size = {3.0, 4.0};
             grv = 1.0;
-            vel.x = 1.0;
+            vel.x = 0.0;
             std::cout << "create" << std::endl;
         }
         ~Pingu() {
             std::cout << "destroy" << std::endl;
         }
-    virtual void update(Pingus* game, float _fElapsedTime){
-        rect imaginaryBox = {{pos.x - size.x, pos.y - size.y}, {vel.x * 2, vel.y * 2}};
-        rect playerBox = { {pos.x, pos.y}, {size.x, size.y} };
-        rect temprect;
-        olc::vf2d cp, cn;
-        float ct = 0; //, min_t = INFINITY;
-
-        for (int y = int(imaginaryBox.pos.y); y < int(imaginaryBox.pos.y + imaginaryBox.size.y); y++) {
-            for (int x = int(imaginaryBox.pos.x); x < int(imaginaryBox.pos.x + imaginaryBox.size.x); x++) {
-                temprect = { {float(x), float(y)},{1.0f, 1.0f}};
-                if (game -> DynamicRectVsRect(&temprect, _fElapsedTime, playerBox, cp, cn, ct))
-                {
-                    vel = { 0.0, 0.0 };
-                }
-            }
-        }
-
-        std::cout << _fElapsedTime << std::endl;
-        vel.y += grv;
-        pos += vel * _fElapsedTime;
-    }
-    virtual void draw(olc::PixelGameEngine* pge, std::map<std::string,size_t>&texMap) {
-        auto& assets = AssetManager::Current();
-        pge->DrawSprite(pos, assets.GetTexture(texMap["pingutexture"])->sprite);
-    }
+    virtual void update(Pingus* game, float _fElapsedTime);
+    virtual void draw(olc::PixelGameEngine* pge, std::map<std::string, size_t>& texMap);
 };
 
 class Coin : public Actor{
@@ -155,14 +128,14 @@ class Pingus : public olc::PixelGameEngine
             // Calculate intersections with rectangle bounding axes
             olc::vf2d t_near = (target->pos - ray_origin) * invdir;
             olc::vf2d t_far = (target->pos + target->size - ray_origin) * invdir;
-
+            //std::cout << "1" << std::endl;
             if (std::isnan(t_far.y) || std::isnan(t_far.x)) return false;
             if (std::isnan(t_near.y) || std::isnan(t_near.x)) return false;
-
+            
             // Sort distances
             if (t_near.x > t_far.x) std::swap(t_near.x, t_far.x);
             if (t_near.y > t_far.y) std::swap(t_near.y, t_far.y);
-
+            //std::cout << "2" << std::endl;
             // Early rejection		
             if (t_near.x > t_far.y || t_near.y > t_far.x) return false;
 
@@ -171,11 +144,11 @@ class Pingus : public olc::PixelGameEngine
 
             // Furthest 'time' is contact on opposite side of target
             float t_hit_far = std::min(t_far.x, t_far.y);
-
+            //std::cout << "3" << std::endl;
             // Reject if ray direction is pointing away from object
             if (t_hit_far < 0)
                 return false;
-
+            //std::cout << "4" << std::endl;
             // Contact point of collision from parametric line equation
             contact_point = ray_origin + t_hit_near * ray_dir;
 
@@ -207,7 +180,7 @@ class Pingus : public olc::PixelGameEngine
             rect expanded_target;
             expanded_target.pos = r_static.pos - r_dynamic->size / 2;
             expanded_target.size = r_static.size + r_dynamic->size;
-
+            //std::cout << RayVsRect(r_dynamic->pos + r_dynamic->size / 2, r_dynamic->vel * fTimeStep, &expanded_target, contact_point, contact_normal, contact_time) << std::endl;
             if (RayVsRect(r_dynamic->pos + r_dynamic->size / 2, r_dynamic->vel * fTimeStep, &expanded_target, contact_point, contact_normal, contact_time))
                 return (contact_time >= 0.0f && contact_time < 1.0f);
             else
@@ -251,7 +224,7 @@ class Pingus : public olc::PixelGameEngine
             textureMap["cointexture"] = assets.CreateTexture("res/coin.png");
             textureMap["pingutexture"] = assets.CreateTexture("res/pingu.png");
             
-            debugMode = true;
+            debugMode = false;
             action = BOMB;
 
             spriteMap = new olc::Sprite("res/image.png");
@@ -259,16 +232,8 @@ class Pingus : public olc::PixelGameEngine
             spriteRedCircle = new olc::Sprite("res/circlebox.png");
             spriteCoin = new olc::Sprite("res/coin.png");
 
-            //Actor actor(2, 2);
-            //Pingu pingu(30, 30);
-            //Pingu* ppingu = new Pingu({90, 90});
-            //Auto_ptr1<Actor> ppingu(new Pingu({ 90, 90 }));
-            //Actor* actor = new Actor({0, 0});
-            //levelActors.push_back(actor);
-            levelActors.push_back(std::make_unique<Pingu>(olc::vf2d{ 32.0,32.0 }));
-            //levelActors.push_back(ppingu);
-            //levelActors.push_back(actor);
-            //spriteMap -> SetPixel(olc::vi2d(7, 16), olc::Pixel(0, 0, 0, 255));
+            levelActors.push_back(std::make_unique<Pingu>(olc::vf2d{ 80.0,0.0 }));
+
             RemoveCircle(4, 4, assets.GetTexture(textureMap["spritemap"])->sprite, assets.GetTexture(textureMap["collisionmap"])->sprite, assets.GetTexture(textureMap["bombpng"])->sprite);
             return true;
         }
@@ -294,11 +259,7 @@ class Pingus : public olc::PixelGameEngine
                         );
                     }
                 }
-                /*if(action == DIG){
-                    if(GetMouse(0).bHeld){}
-                }*/
             }
-            //std::cout << CompareColour(spriteMap -> GetPixel(7, 16), olc::Pixel(0, 0, 0, 0));
             for (auto& act : levelActors){
                 act->update(this, fElapsedTime);
                 act -> draw(this, textureMap);
@@ -307,6 +268,53 @@ class Pingus : public olc::PixelGameEngine
             return true;
         }
 };
+
+void Actor::update(Pingus* game, float _fElapsedTime){}
+void Actor::draw(olc::PixelGameEngine* pge, std::map<std::string, size_t>& texMap) {
+    auto& assets = AssetManager::Current();
+    pge->DrawSprite(pos, assets.GetTexture(texMap["cointexture"])->sprite);
+}
+
+void Pingu::update(Pingus* game, float _fElapsedTime) {
+    auto& assets = AssetManager::Current();
+
+    rect imaginaryBox = { {pos.x - vel.x - 10, pos.y - vel.y - 10}, {vel.x * 2 + 20, vel.y * 2 + 20} };
+    rect playerBox = { {pos.x, pos.y}, {size.x, size.y}, {vel.x, vel.y} };
+    rect temprect;
+    olc::vf2d cp, cn;
+    float ct, min_t = INFINITY;
+
+    olc::vf2d vMouse = { float(game->GetMouseX()), float(game->GetMouseY()) };
+    olc::vf2d ray_point = { pos.x, pos.y };
+    olc::vf2d ray_direction = vMouse - ray_point;
+    if(game->GetMouse(0).bHeld){
+        vel += ray_direction.norm() * 50.0f * _fElapsedTime;
+    }
+    
+    for (int y = int(imaginaryBox.pos.y); y < int(imaginaryBox.pos.y + imaginaryBox.size.y); y++) {
+        for (int x = int(imaginaryBox.pos.x); x < int(imaginaryBox.pos.x + imaginaryBox.size.x); x++) {
+            if (game -> CompareColour((assets.GetTexture(game -> textureMap["collisionmap"])->sprite)->GetPixel(x, y), olc::Pixel(69, 40, 60, 255))) {
+                
+                temprect = { {float(x), float(y)},{1.0f, 1.0f} };
+                if (game->DynamicRectVsRect(&playerBox, _fElapsedTime, temprect, cp, cn, ct))
+                {
+                    std::cout << "hit!" << std::endl;
+                    game->ResolveDynamicRectVsRect(&playerBox, _fElapsedTime, &temprect);
+                    //vel = { 0, 0 };
+                    vel = playerBox.vel;
+                    
+                    
+                }
+            }
+        }
+    }
+    vel.y += grv;
+    pos += vel * _fElapsedTime;
+}
+void Pingu::draw(olc::PixelGameEngine* pge, std::map<std::string, size_t>& texMap) {
+    auto& assets = AssetManager::Current();
+    pge->DrawSprite(pos, assets.GetTexture(texMap["pingutexture"])->sprite);
+}
 
 int main()
 {
