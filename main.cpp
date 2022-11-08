@@ -1,6 +1,6 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
-#include "asset_manager.cpp"
+#include "asset_manager.h"
 #include <vector>
 #include <iostream>
 #include <string>
@@ -51,7 +51,7 @@ class Pingus : public olc::PixelGameEngine
             sAppName = "Pingus";
         }
     public:
-        AssetManager assets();
+        AssetManager& assets = AssetManager::Current(); // Look here
         
         bool debugMode;
         int action;
@@ -120,7 +120,7 @@ class Pingus : public olc::PixelGameEngine
 
             //Actor actor(2, 2);
             //Pingu pingu(30, 30);
-            Pingu* ppingu = new Pingu({30, 30});
+            Pingu* ppingu = new Pingu({90, 90});
             Actor* actor = new Actor({0, 0});
             //levelActors.push_back(actor);
             levelActors.push_back(ppingu);
