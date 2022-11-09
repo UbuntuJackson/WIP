@@ -283,7 +283,7 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
     rect temprect;
     olc::vf2d cp, cn;
     float ct = 0, min_t = INFINITY;
-    std::vector<std::tuple<int, float, rect*>> z;
+    std::vector<std::tuple<int, float, rect>> z;
 
     olc::vf2d vMouse = { float(game->GetMouseX()), float(game->GetMouseY()) };
     olc::vf2d ray_point = { playerrect.pos.x, playerrect.pos.y };
@@ -300,20 +300,20 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
                 temprect = { {float(x), float(y)},{1.0f, 1.0f} };
                 if (game->DynamicRectVsRect(&playerrect, _fElapsedTime, temprect, cp, cn, ct))
                 {
-                    //z.push_back(std::make_tuple( y*int(imaginaryBox.size.x)+x , ct , &temprect));
-                    std::cout << "hit!" << std::endl;
-                    game->ResolveDynamicRectVsRect(&playerrect, _fElapsedTime, &temprect);
+                    z.push_back(std::make_tuple( y*int(imaginaryBox.size.x)+x , ct , temprect));
+                    //std::cout << std::get<0>(z[0]) << ", " << std::get<1>(z[0]) << ", " << std::get<2>(z[0]) << std::endl;
+                    //game->ResolveDynamicRectVsRect(&playerrect, _fElapsedTime, &temprect);
                 }
             }
         }
     }
-    std::sort(z.begin(), z.end(), [](const std::tuple<int, float, rect*>& a, const std::tuple<int, float, rect*>& b)
+    std::sort(z.begin(), z.end(), [](const std::tuple<int, float, rect>& a, const std::tuple<int, float, rect>& b)
     {
         return std::get<1>(a) < std::get<1>(b);
     });
 
     for (auto j : z)
-        game ->ResolveDynamicRectVsRect(&playerrect, _fElapsedTime, std::get<2>(j));
+        game ->ResolveDynamicRectVsRect(&playerrect, _fElapsedTime, &std::get<2>(j));
 
 
 
@@ -329,7 +329,7 @@ int main()
 {
     Pingus demo;
     demo.SetPixelMode(olc::Pixel::MASK);
-    if(demo.Construct(200, 200, 4, 4))
+    if(demo.Construct(400, 400, 4, 4))
     {
         demo.Start();
     }
