@@ -329,7 +329,7 @@ int main()
 {
     Pingus demo;
     demo.SetPixelMode(olc::Pixel::MASK);
-    if(demo.Construct(400, 400, 4, 4))
+    if(demo.Construct(200, 100, 8, 8))
     {
         demo.Start();
     }
