@@ -98,6 +98,33 @@ class Pingus : public olc::PixelGameEngine
             }
             return false;
         }
+
+        std::vector<olc::vf2d> collidedPixles;
+        bool WorldVsPlayer(rect *player) {
+            auto& assets = AssetManager::Current();
+            int x = int(player->pos.x)-1;
+            for (int y = int(player -> pos.y); y < int(player -> pos.y) + int(player -> size.y); y++) {
+                
+                    if (CompareColour(assets.GetTexture(textureMap["collisionmap"])->sprite->GetPixel(x, y), olc::Pixel(69, 40, 60, 255))) {
+                        collidedPixles.push_back({float(x), float(y)});
+                        std::cout << "hit" << std::endl;
+                        return true;
+                    }
+                
+            }
+            x = int(player->pos.x + player -> size.x);
+            for (int y = int(player->pos.y); y < int(player->pos.y) + int(player->size.y); y++) {
+
+                if (CompareColour(assets.GetTexture(textureMap["collisionmap"])->sprite->GetPixel(x, y), olc::Pixel(69, 40, 60, 255))) {
+                    collidedPixles.push_back({ float(x), float(y)});
+                    std::cout << "hit" << std::endl;
+                    return true;
+                }
+
+            }
+            return false;
+        }
+
         void RemoveCell(int x, int y, olc::Sprite *sprmap, olc::Sprite *sprcollisionMap){
             sprmap -> SetPixel(x, y, olc::Pixel(0, 0, 0, 0));
         }
@@ -106,7 +133,6 @@ class Pingus : public olc::PixelGameEngine
                 for(int i = 0; i < sprredCircle -> width; i++){
                     if(CompareColour(sprredCircle -> GetPixel(i, j), olc::Pixel(255, 0, 0, 255))){
                         RemoveCell(x+i,y+j, sprmap, sprcollisionMap);
-                        //std::cout << x+i << ", " << y+j << std::endl;
                     }
                 }
             }
@@ -128,14 +154,12 @@ class Pingus : public olc::PixelGameEngine
             // Calculate intersections with rectangle bounding axes
             olc::vf2d t_near = (target->pos - ray_origin) * invdir;
             olc::vf2d t_far = (target->pos + target->size - ray_origin) * invdir;
-            //std::cout << "1" << std::endl;
             if (std::isnan(t_far.y) || std::isnan(t_far.x)) return false;
             if (std::isnan(t_near.y) || std::isnan(t_near.x)) return false;
             
             // Sort distances
             if (t_near.x > t_far.x) std::swap(t_near.x, t_far.x);
             if (t_near.y > t_far.y) std::swap(t_near.y, t_far.y);
-            //std::cout << "2" << std::endl;
             // Early rejection		
             if (t_near.x > t_far.y || t_near.y > t_far.x) return false;
 
@@ -144,11 +168,9 @@ class Pingus : public olc::PixelGameEngine
 
             // Furthest 'time' is contact on opposite side of target
             float t_hit_far = std::min(t_far.x, t_far.y);
-            //std::cout << "3" << std::endl;
             // Reject if ray direction is pointing away from object
             if (t_hit_far < 0)
                 return false;
-            //std::cout << "4" << std::endl;
             // Contact point of collision from parametric line equation
             contact_point = ray_origin + t_hit_near * ray_dir;
 
@@ -180,7 +202,7 @@ class Pingus : public olc::PixelGameEngine
             rect expanded_target;
             expanded_target.pos = r_static.pos - r_dynamic->size / 2;
             expanded_target.size = r_static.size + r_dynamic->size;
-            //std::cout << RayVsRect(r_dynamic->pos + r_dynamic->size / 2, r_dynamic->vel * fTimeStep, &expanded_target, contact_point, contact_normal, contact_time) << std::endl;
+       
             if (RayVsRect(r_dynamic->pos + r_dynamic->size / 2, r_dynamic->vel * fTimeStep, &expanded_target, contact_point, contact_normal, contact_time))
                 return (contact_time >= 0.0f && contact_time < 1.0f);
             else
@@ -197,8 +219,14 @@ class Pingus : public olc::PixelGameEngine
                 if (contact_normal.x < 0) r_dynamic->contact[1] = r_static; else nullptr;
                 if (contact_normal.y < 0) r_dynamic->contact[2] = r_static; else nullptr;
                 if (contact_normal.x > 0) r_dynamic->contact[3] = r_static; else nullptr;
-
                 r_dynamic->vel += contact_normal * olc::vf2d(std::abs(r_dynamic->vel.x), std::abs(r_dynamic->vel.y)) * (1 - contact_time);
+                /*if (WorldVsPlayer(r_dynamic)) {
+                    r_dynamic->vel.y = -(collidedPixles[0].y-r_dynamic->pos.y);
+                    std::cout << r_dynamic ->vel.y << std::endl;
+                }
+                else {
+                    r_dynamic->vel += contact_normal * olc::vf2d(std::abs(r_dynamic->vel.x), std::abs(r_dynamic->vel.y)) * (1 - contact_time);
+                }*/
                 return true;
             }
 
@@ -241,16 +269,10 @@ class Pingus : public olc::PixelGameEngine
         {
             Clear(olc::BLACK);
             auto& assets = AssetManager::Current();
-            /*for(int j = 0; j < spriteCollisionMap -> height; j++){
-                for(int i = 0; i < spriteCollisionMap -> width; i++){
-                    Draw(i, j, collisionMap[(spriteCollisionMap -> width) * j + i]);
-                }
-            }*/
             
             if(debugMode){
                 if(action == BOMB){
                     if(GetMouse(0).bPressed){
-                        //std::cout << GetMouse(0).bPressed;
                         RemoveCircle(
                             GetMouseX() - 8, GetMouseY() - 8,
                             assets.GetTexture(textureMap["spritemap"])->sprite,
@@ -279,7 +301,6 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
     auto& assets = AssetManager::Current();
 
     rect imaginaryBox = { {playerrect.pos.x - fabs(playerrect.vel.x) - 10, playerrect.pos.y - fabs(playerrect.vel.y) - 10}, {fabs(playerrect.vel.x) * 2 + 20, fabs(playerrect.vel.y) * 2 + 20} };
-    //rect playerBox = { {pos.x, pos.y}, {size.x, size.y}, {vel.x, vel.y} };
     rect temprect;
     olc::vf2d cp, cn;
     float ct = 0, min_t = INFINITY;
@@ -293,6 +314,8 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
     }
     game->DrawRect(imaginaryBox.pos, imaginaryBox.size, olc::YELLOW);
 
+    playerrect.vel.y += grv;
+
     for (int y = int(imaginaryBox.pos.y); y < int(imaginaryBox.pos.y + imaginaryBox.size.y); y++) {
         for (int x = int(imaginaryBox.pos.x); x < int(imaginaryBox.pos.x + imaginaryBox.size.x); x++) {
             if (game -> CompareColour((assets.GetTexture(game -> textureMap["collisionmap"])->sprite)->GetPixel(x, y), olc::Pixel(69, 40, 60, 255))) {
@@ -301,8 +324,6 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
                 if (game->DynamicRectVsRect(&playerrect, _fElapsedTime, temprect, cp, cn, ct))
                 {
                     z.push_back(std::make_tuple( y*int(imaginaryBox.size.x)+x , ct , temprect));
-                    //std::cout << std::get<0>(z[0]) << ", " << std::get<1>(z[0]) << ", " << std::get<2>(z[0]) << std::endl;
-                    //game->ResolveDynamicRectVsRect(&playerrect, _fElapsedTime, &temprect);
                 }
             }
         }
@@ -315,9 +336,6 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
     for (auto j : z)
         game ->ResolveDynamicRectVsRect(&playerrect, _fElapsedTime, &std::get<2>(j));
 
-
-
-    //vel.y += grv;
     playerrect.pos += playerrect.vel * _fElapsedTime;
 }
 void Pingu::draw(olc::PixelGameEngine* pge, std::map<std::string, size_t>& texMap) {
