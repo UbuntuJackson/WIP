@@ -44,6 +44,7 @@ class Pingu : public Actor{
         Pingu(olc::vf2d _pos) : Actor(_pos){
             grv = 1.0;
             playerrect = { pos, {4, 6}};
+            playerrect.vel = { 0, 0 };
             std::cout << "create" << std::endl;
         }
         ~Pingu() {
@@ -107,7 +108,7 @@ class Pingus : public olc::PixelGameEngine
                 
                     if (CompareColour(assets.GetTexture(textureMap["collisionmap"])->sprite->GetPixel(x, y), olc::Pixel(69, 40, 60, 255))) {
                         collidedPixles.push_back({float(x), float(y)});
-                        std::cout << "hit" << std::endl;
+
                         return true;
                     }
                 
@@ -117,7 +118,7 @@ class Pingus : public olc::PixelGameEngine
 
                 if (CompareColour(assets.GetTexture(textureMap["collisionmap"])->sprite->GetPixel(x, y), olc::Pixel(69, 40, 60, 255))) {
                     collidedPixles.push_back({ float(x), float(y)});
-                    std::cout << "hit" << std::endl;
+
                     return true;
                 }
 
@@ -209,7 +210,7 @@ class Pingus : public olc::PixelGameEngine
                 return false;
         }
 
-        bool ResolveDynamicRectVsRect(rect* r_dynamic, const float fTimeStep, rect* r_static)
+        bool ResolveDynamicRectVsRect(rect* r_dynamic, const float fTimeStep, rect* r_static, std::vector<rect> cells)
         {
             olc::vf2d contact_point, contact_normal;
             float contact_time = 0.0f;
@@ -219,14 +220,15 @@ class Pingus : public olc::PixelGameEngine
                 if (contact_normal.x < 0) r_dynamic->contact[1] = r_static; else nullptr;
                 if (contact_normal.y < 0) r_dynamic->contact[2] = r_static; else nullptr;
                 if (contact_normal.x > 0) r_dynamic->contact[3] = r_static; else nullptr;
-                r_dynamic->vel += contact_normal * olc::vf2d(std::abs(r_dynamic->vel.x), std::abs(r_dynamic->vel.y)) * (1 - contact_time);
-                /*if (WorldVsPlayer(r_dynamic)) {
-                    r_dynamic->vel.y = -(collidedPixles[0].y-r_dynamic->pos.y);
-                    std::cout << r_dynamic ->vel.y << std::endl;
+                //r_dynamic->vel += contact_normal * olc::vf2d(std::abs(r_dynamic->vel.x), std::abs(r_dynamic->vel.y)) * (1 - contact_time);
+                std::cout << cells[0].pos.y << std::endl;
+                //return true;
+                if (cells[0].pos.y > r_dynamic->pos.y + r_dynamic->size.y / 2 && cells[0].pos.y < r_dynamic -> pos.y + r_dynamic->size.y) {
+                    r_dynamic->pos.y = cells[0].pos.y - r_dynamic-> size.y;
                 }
                 else {
                     r_dynamic->vel += contact_normal * olc::vf2d(std::abs(r_dynamic->vel.x), std::abs(r_dynamic->vel.y)) * (1 - contact_time);
-                }*/
+                }
                 return true;
             }
 
@@ -305,6 +307,7 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
     olc::vf2d cp, cn;
     float ct = 0, min_t = INFINITY;
     std::vector<std::tuple<int, float, rect>> z;
+    std::vector<rect> collidedCells;
 
     olc::vf2d vMouse = { float(game->GetMouseX()), float(game->GetMouseY()) };
     olc::vf2d ray_point = { playerrect.pos.x, playerrect.pos.y };
@@ -323,18 +326,27 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
                 temprect = { {float(x), float(y)},{1.0f, 1.0f} };
                 if (game->DynamicRectVsRect(&playerrect, _fElapsedTime, temprect, cp, cn, ct))
                 {
+
                     z.push_back(std::make_tuple( y*int(imaginaryBox.size.x)+x , ct , temprect));
+                    
+                    collidedCells.push_back(temprect);
                 }
             }
         }
     }
+
     std::sort(z.begin(), z.end(), [](const std::tuple<int, float, rect>& a, const std::tuple<int, float, rect>& b)
     {
         return std::get<1>(a) < std::get<1>(b);
     });
 
+    std::sort(collidedCells.begin(), collidedCells.end(), [](const rect& a, const rect& b)
+        {
+            return a.pos.y < b.pos.y;
+        });
+
     for (auto j : z)
-        game ->ResolveDynamicRectVsRect(&playerrect, _fElapsedTime, &std::get<2>(j));
+        game ->ResolveDynamicRectVsRect(&playerrect, _fElapsedTime, &std::get<2>(j), collidedCells);
 
     playerrect.pos += playerrect.vel * _fElapsedTime;
 }
