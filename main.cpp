@@ -34,7 +34,7 @@ class Actor{
         vel = { 0.0, 0.0 };
     }
     virtual void update(Pingus* game, float _fElapsedTime);
-    virtual void draw(olc::PixelGameEngine* pge, std::map<std::string, size_t>& texMap);
+    virtual void draw(Pingus* game, std::map<std::string, size_t>& texMap);
 };
 
 class Pingu : public Actor{
@@ -51,7 +51,7 @@ class Pingu : public Actor{
             std::cout << "destroy" << std::endl;
         }
     virtual void update(Pingus* game, float _fElapsedTime);
-    virtual void draw(olc::PixelGameEngine* pge, std::map<std::string, size_t>& texMap);
+    virtual void draw(Pingus* game, std::map<std::string, size_t>& texMap);
 };
 
 class Coin : public Actor{
@@ -91,6 +91,9 @@ class Pingus : public olc::PixelGameEngine
         olc::Sprite *spriteRedCoin;
         olc::Sprite *spriteCoin;
         std::map<std::string,size_t> textureMap;
+
+        rect lastCell;
+
         bool CompareColour(olc::Pixel colour_a, olc::Pixel colour_b){
             if(colour_a.r == colour_b.r && colour_a.g == colour_b.g && colour_a.b == colour_b.b &&
                 colour_a.a == colour_b.a
@@ -221,14 +224,17 @@ class Pingus : public olc::PixelGameEngine
                 if (contact_normal.y < 0) r_dynamic->contact[2] = r_static; else nullptr;
                 if (contact_normal.x > 0) r_dynamic->contact[3] = r_static; else nullptr;
                 //r_dynamic->vel += contact_normal * olc::vf2d(std::abs(r_dynamic->vel.x), std::abs(r_dynamic->vel.y)) * (1 - contact_time);
-                std::cout << cells[0].pos.y << std::endl;
+                
                 //return true;
                 if (cells[0].pos.y > r_dynamic->pos.y + r_dynamic->size.y / 2 && cells[0].pos.y < r_dynamic -> pos.y + r_dynamic->size.y) {
                     r_dynamic->pos.y = cells[0].pos.y - r_dynamic-> size.y;
+                    std::cout << "In this case, we detected an upward slope" << std::endl;
                 }
                 else {
                     r_dynamic->vel += contact_normal * olc::vf2d(std::abs(r_dynamic->vel.x), std::abs(r_dynamic->vel.y)) * (1 - contact_time);
+                    std::cout << "In this case, we detected a wall" << std::endl;
                 }
+                lastCell = cells[0];
                 return true;
             }
 
@@ -284,19 +290,23 @@ class Pingus : public olc::PixelGameEngine
                     }
                 }
             }
+            
             for (auto& act : levelActors){
                 act->update(this, fElapsedTime);
                 act -> draw(this, textureMap);
             }
-            DrawSprite(0, 0, assets.GetTexture(textureMap["spritemap"])->sprite);
+            assets.GetTexture(textureMap["collisionmap"])->sprite->SetPixel(lastCell.pos, olc::Pixel(255, 0, 0, 255));
+            DrawSprite(0, 0, assets.GetTexture(textureMap["collisionmap"])->sprite);
+            assets.GetTexture(textureMap["collisionmap"])->sprite->SetPixel(lastCell.pos, olc::Pixel(69, 40, 60, 255));
+            //DrawRect(0, 0, 16, 24, olc::YELLOW);
             return true;
         }
 };
 
 void Actor::update(Pingus* game, float _fElapsedTime){}
-void Actor::draw(olc::PixelGameEngine* pge, std::map<std::string, size_t>& texMap) {
+void Actor::draw(Pingus* game, std::map<std::string, size_t>& texMap) {
     auto& assets = AssetManager::Current();
-    pge->DrawSprite(pos, assets.GetTexture(texMap["cointexture"])->sprite);
+    game->DrawSprite(pos, assets.GetTexture(texMap["cointexture"])->sprite);
 }
 
 void Pingu::update(Pingus* game, float _fElapsedTime) {
@@ -350,16 +360,17 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
 
     playerrect.pos += playerrect.vel * _fElapsedTime;
 }
-void Pingu::draw(olc::PixelGameEngine* pge, std::map<std::string, size_t>& texMap) {
+void Pingu::draw(Pingus* game, std::map<std::string, size_t>& texMap) {
     auto& assets = AssetManager::Current();
-    pge->DrawSprite(playerrect.pos, assets.GetTexture(texMap["pingutexture"])->sprite);
+    game->DrawSprite(playerrect.pos, assets.GetTexture(texMap["pingutexture"])->sprite);
+    //game->DrawRect(game->lastCell.pos, game->lastCell.size, olc::YELLOW);
 }
 
 int main()
 {
     Pingus demo;
     demo.SetPixelMode(olc::Pixel::MASK);
-    if(demo.Construct(200, 100, 8, 8))
+    if(demo.Construct(800, 400, 2, 2))
     {
         demo.Start();
     }
