@@ -340,7 +340,7 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
     if(game->GetMouse(0).bHeld){
         playerrect.vel += ray_direction.norm() * 50.0f * _fElapsedTime;
     }
-    game->DrawRect(imaginaryBox.pos, imaginaryBox.size, olc::YELLOW);
+    //game->DrawRect(imaginaryBox.pos, imaginaryBox.size, olc::YELLOW);
 
     playerrect.vel.y += grv;
 
@@ -388,10 +388,10 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
         return std::get<1>(a) < std::get<1>(b);
     });
 
-    std::sort(collidedCells.begin(), collidedCells.end(), [](const rect& a, const rect& b)
+    /*std::sort(collidedCells.begin(), collidedCells.end(), [](const rect& a, const rect& b)
         {
             return a.pos.y < b.pos.y;
-        });
+        });*/
 
     for (auto j : z)
         game ->ResolveDynamicRectVsRect(&playerrect, _fElapsedTime, &std::get<2>(j), collidedCells);
@@ -407,7 +407,7 @@ int main()
 {
     Pingus demo;
     demo.SetPixelMode(olc::Pixel::MASK);
-    if(demo.Construct(1600, 800, 1, 1))
+    if(demo.Construct(800, 400, 2, 2))
     {
         demo.Start();
     }
