@@ -30,7 +30,7 @@ class Actor{
 
     Actor(olc::vf2d _pos){
         pos = _pos;
-        size = {4.0, 4.0};
+        size = {16.0, 24.0};
         vel = { 0.0, 0.0 };
     }
     virtual void update(Pingus* game, float _fElapsedTime);
@@ -43,7 +43,7 @@ class Pingu : public Actor{
         float grv;
         Pingu(olc::vf2d _pos) : Actor(_pos){
             grv = 1.0;
-            playerrect = { pos, {4, 6}};
+            playerrect = { pos, {16, 24}};
             playerrect.vel = { 0, 0 };
             std::cout << "create" << std::endl;
         }
@@ -285,7 +285,7 @@ class Pingus : public olc::PixelGameEngine
             spriteRedCircle = new olc::Sprite("res/circlebox.png");
             spriteCoin = new olc::Sprite("res/coin.png");
 
-            levelActors.push_back(std::make_unique<Pingu>(olc::vf2d{ 100.0,0.0 }));
+            levelActors.push_back(std::make_unique<Pingu>(olc::vf2d{ 2.0,0.0 }));
 
             RemoveCircle(4, 4, assets.GetTexture(textureMap["spritemap"])->sprite, assets.GetTexture(textureMap["collisionmap"])->sprite, assets.GetTexture(textureMap["bombpng"])->sprite);
             return true;
@@ -327,7 +327,7 @@ void Actor::draw(Pingus* game, std::map<std::string, size_t>& texMap) {
 void Pingu::update(Pingus* game, float _fElapsedTime) {
     auto& assets = AssetManager::Current();
 
-    rect imaginaryBox = { {playerrect.pos.x - fabs(playerrect.vel.x) - 10, playerrect.pos.y - fabs(playerrect.vel.y) - 10}, {fabs(playerrect.vel.x) * 2 + 20, fabs(playerrect.vel.y) * 2 + 20} };
+    rect imaginaryBox = { {playerrect.pos.x - fabs(playerrect.vel.x) - 10, playerrect.pos.y - fabs(playerrect.vel.y) - 10}, {fabs(playerrect.vel.x) * 2 + playerrect.size.x + 20, fabs(playerrect.vel.y) * 2 + playerrect.size.y + 20} };
     rect temprect;
     olc::vf2d cp, cn;
     float ct = 0, min_t = INFINITY;
@@ -407,7 +407,7 @@ int main()
 {
     Pingus demo;
     demo.SetPixelMode(olc::Pixel::MASK);
-    if(demo.Construct(800, 400, 2, 2))
+    if(demo.Construct(1600, 800, 1, 1))
     {
         demo.Start();
     }
