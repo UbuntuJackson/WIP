@@ -93,6 +93,7 @@ class Pingus : public olc::PixelGameEngine
         std::map<std::string,size_t> textureMap;
 
         rect lastCell;
+        //std::vector<olc::vf2d> snapDownCells;
 
         bool CompareColour(olc::Pixel colour_a, olc::Pixel colour_b){
             if(colour_a.r == colour_b.r && colour_a.g == colour_b.g && colour_a.b == colour_b.b &&
@@ -104,6 +105,19 @@ class Pingus : public olc::PixelGameEngine
         }
 
         std::vector<olc::vf2d> collidedPixles;
+
+        void searchDownSlope(rect player, std::vector<olc::vf2d>* cells) {
+            for (int y = int(player.pos.y + player.size.y); y < int(player.pos.y + player.size.y + 4.0f); y++) {
+                for (int x = int(player.pos.x); x < int(player.pos.x + player.size.x + 1.0f); x++) {
+                    if (CompareColour(assets.GetTexture(textureMap["collisionmap"])->sprite->GetPixel(x, y), olc::Pixel(69, 40, 60, 255))) {
+                        cells -> push_back({ float(x), float(y)});
+                    }
+                }
+            }
+            
+            //if()
+        }
+
         bool WorldVsPlayer(rect *player) {
             auto& assets = AssetManager::Current();
             int x = int(player->pos.x)-1;
@@ -223,18 +237,21 @@ class Pingus : public olc::PixelGameEngine
                 if (contact_normal.x < 0) r_dynamic->contact[1] = r_static; else nullptr;
                 if (contact_normal.y < 0) r_dynamic->contact[2] = r_static; else nullptr;
                 if (contact_normal.x > 0) r_dynamic->contact[3] = r_static; else nullptr;
-                //r_dynamic->vel += contact_normal * olc::vf2d(std::abs(r_dynamic->vel.x), std::abs(r_dynamic->vel.y)) * (1 - contact_time);
-                
+                r_dynamic->vel += contact_normal * olc::vf2d(std::abs(r_dynamic->vel.x), std::abs(r_dynamic->vel.y)) * (1 - contact_time);
+                /*if (r_dynamic->contact[2] != nullptr) {
+                    std::cout << r_dynamic->contact[2]->pos.y;
+                }
+
                 //return true;
                 if (cells[0].pos.y > r_dynamic->pos.y + r_dynamic->size.y / 2 && cells[0].pos.y < r_dynamic -> pos.y + r_dynamic->size.y) {
                     r_dynamic->pos.y = cells[0].pos.y - r_dynamic-> size.y;
-                    std::cout << "In this case, we detected an upward slope" << std::endl;
+                    //std::cout << "In this case, we detected an upward slope" << std::endl;
                 }
                 else {
                     r_dynamic->vel += contact_normal * olc::vf2d(std::abs(r_dynamic->vel.x), std::abs(r_dynamic->vel.y)) * (1 - contact_time);
-                    std::cout << "In this case, we detected a wall" << std::endl;
+                    //std::cout << "In this case, we detected a wall" << std::endl;
                 }
-                lastCell = cells[0];
+                lastCell = cells[0]*/
                 return true;
             }
 
@@ -268,7 +285,7 @@ class Pingus : public olc::PixelGameEngine
             spriteRedCircle = new olc::Sprite("res/circlebox.png");
             spriteCoin = new olc::Sprite("res/coin.png");
 
-            levelActors.push_back(std::make_unique<Pingu>(olc::vf2d{ 80.0,0.0 }));
+            levelActors.push_back(std::make_unique<Pingu>(olc::vf2d{ 100.0,0.0 }));
 
             RemoveCircle(4, 4, assets.GetTexture(textureMap["spritemap"])->sprite, assets.GetTexture(textureMap["collisionmap"])->sprite, assets.GetTexture(textureMap["bombpng"])->sprite);
             return true;
@@ -295,9 +312,7 @@ class Pingus : public olc::PixelGameEngine
                 act->update(this, fElapsedTime);
                 act -> draw(this, textureMap);
             }
-            assets.GetTexture(textureMap["collisionmap"])->sprite->SetPixel(lastCell.pos, olc::Pixel(255, 0, 0, 255));
             DrawSprite(0, 0, assets.GetTexture(textureMap["collisionmap"])->sprite);
-            assets.GetTexture(textureMap["collisionmap"])->sprite->SetPixel(lastCell.pos, olc::Pixel(69, 40, 60, 255));
             //DrawRect(0, 0, 16, 24, olc::YELLOW);
             return true;
         }
@@ -328,6 +343,29 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
     game->DrawRect(imaginaryBox.pos, imaginaryBox.size, olc::YELLOW);
 
     playerrect.vel.y += grv;
+
+    //create the vector
+    std::vector<olc::vf2d> snapDownCells;
+    //find solids
+    for (int y = int(playerrect.pos.y + playerrect.size.y); y < int(playerrect.pos.y + playerrect.size.y + 4.0f); y++) {
+        for (int x = int(playerrect.pos.x - 1.0f); x < int(playerrect.pos.x + playerrect.size.x); x++) {
+            if (game->CompareColour(assets.GetTexture(game->textureMap["collisionmap"])->sprite->GetPixel(x, y), olc::Pixel(69, 40, 60, 255))) {
+                snapDownCells.push_back({ float(x), float(y) });
+            }
+        }
+    }
+    //sort solids
+    std::sort(snapDownCells.begin(), snapDownCells.end(), [](const olc::vf2d& a, const olc::vf2d& b)
+    {
+        return a.y < b.y;
+    });
+    //set y position to solid + height if rect's contact[2] != nullptr;
+    
+
+    if (playerrect.contact[2] != nullptr && snapDownCells.size() > 0) {
+        playerrect.pos.y = snapDownCells[0].y - playerrect.size.y;
+        std::cout << snapDownCells[0].y << std::endl;
+    }
 
     for (int y = int(imaginaryBox.pos.y); y < int(imaginaryBox.pos.y + imaginaryBox.size.y); y++) {
         for (int x = int(imaginaryBox.pos.x); x < int(imaginaryBox.pos.x + imaginaryBox.size.x); x++) {
@@ -363,7 +401,6 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
 void Pingu::draw(Pingus* game, std::map<std::string, size_t>& texMap) {
     auto& assets = AssetManager::Current();
     game->DrawSprite(playerrect.pos, assets.GetTexture(texMap["pingutexture"])->sprite);
-    //game->DrawRect(game->lastCell.pos, game->lastCell.size, olc::YELLOW);
 }
 
 int main()
