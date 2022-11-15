@@ -107,7 +107,7 @@ class Pingus : public olc::PixelGameEngine
         std::vector<olc::vf2d> collidedPixles;
 
         void searchDownSlope(rect player, std::vector<olc::vf2d>* cells) {
-            for (int y = int(player.pos.y + player.size.y); y < int(player.pos.y + player.size.y + 4.0f); y++) {
+            for (int y = int(player.pos.y + player.size.y); y < int(player.pos.y + player.size.y + 12.0f); y++) {
                 for (int x = int(player.pos.x); x < int(player.pos.x + player.size.x + 1.0f); x++) {
                     if (CompareColour(assets.GetTexture(textureMap["collisionmap"])->sprite->GetPixel(x, y), olc::Pixel(69, 40, 60, 255))) {
                         cells -> push_back({ float(x), float(y)});
@@ -346,14 +346,28 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
 
     //create the vector
     std::vector<olc::vf2d> snapDownCells;
+    std::vector<olc::vf2d> snapUpCells;
     //find solids
-    for (int y = int(playerrect.pos.y + playerrect.size.y); y < int(playerrect.pos.y + playerrect.size.y + 4.0f); y++) {
+    for (int y = int(playerrect.pos.y + playerrect.size.y); y < int(playerrect.pos.y + playerrect.size.y + 12.0f); y++) {
         for (int x = int(playerrect.pos.x - 1.0f); x < int(playerrect.pos.x + playerrect.size.x); x++) {
             if (game->CompareColour(assets.GetTexture(game->textureMap["collisionmap"])->sprite->GetPixel(x, y), olc::Pixel(69, 40, 60, 255))) {
                 snapDownCells.push_back({ float(x), float(y) });
             }
         }
     }
+
+    for (int y = int(playerrect.pos.y + playerrect.size.y/2); y < int(playerrect.pos.y + playerrect.size.y); y++) {
+        for (int x = int(playerrect.pos.x - 1.0f); x < int(playerrect.pos.x + playerrect.size.x); x++) {
+            if (game->CompareColour(assets.GetTexture(game->textureMap["collisionmap"])->sprite->GetPixel(x, y), olc::Pixel(69, 40, 60, 255))) {
+                snapUpCells.push_back({ float(x), float(y) });
+            }
+        }
+    }
+
+    std::sort(snapUpCells.begin(), snapUpCells.end(), [](const olc::vf2d& a, const olc::vf2d& b)
+    {
+        return a.y < b.y;
+    });
     //sort solids
     std::sort(snapDownCells.begin(), snapDownCells.end(), [](const olc::vf2d& a, const olc::vf2d& b)
     {
@@ -364,8 +378,11 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
 
     if (playerrect.contact[2] != nullptr && snapDownCells.size() > 0) {
         playerrect.pos.y = snapDownCells[0].y - playerrect.size.y;
-        std::cout << snapDownCells[0].y << std::endl;
+
     }
+    /*if (snapUpCells.size() > 0 && playerrect.contact[2] != nullptr && fabs(playerrect.pos.x + playerrect.size.x / 2 + snapUpCells[0].x + 0.5) > fabs(playerrect.pos.x + playerrect.size.x / 2 - (snapUpCells[0].x + 0.5))) {
+        playerrect.pos.y = snapUpCells[0].y - playerrect.size.y;
+    }*/
 
     for (int y = int(imaginaryBox.pos.y); y < int(imaginaryBox.pos.y + imaginaryBox.size.y); y++) {
         for (int x = int(imaginaryBox.pos.x); x < int(imaginaryBox.pos.x + imaginaryBox.size.x); x++) {
@@ -388,13 +405,19 @@ void Pingu::update(Pingus* game, float _fElapsedTime) {
         return std::get<1>(a) < std::get<1>(b);
     });
 
-    /*std::sort(collidedCells.begin(), collidedCells.end(), [](const rect& a, const rect& b)
+    std::sort(collidedCells.begin(), collidedCells.end(), [](const rect& a, const rect& b)
         {
             return a.pos.y < b.pos.y;
-        });*/
+        });
 
-    for (auto j : z)
-        game ->ResolveDynamicRectVsRect(&playerrect, _fElapsedTime, &std::get<2>(j), collidedCells);
+    std::cout << playerrect.contact.size() << std::endl;
+
+    for (auto j : z) {
+        //if (snapUpCells.size() == 0) {
+            game->ResolveDynamicRectVsRect(&playerrect, _fElapsedTime, &std::get<2>(j), collidedCells);
+        //}
+        
+    }
 
     playerrect.pos += playerrect.vel * _fElapsedTime;
 }
